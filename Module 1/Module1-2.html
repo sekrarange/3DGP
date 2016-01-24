@@ -1,0 +1,54 @@
+<!doctype html>
+<html>
+<head>
+	<title>red quad with three.js</title>
+</head>
+<body onload="initWebGL()">
+	<script src="js/three.min.js"></script>
+	<script>
+		var CANVAS_WIDTH = 400,
+	        CANVAS_HEIGHT= 300;
+
+        var renderer = null,     
+            scene = null,     
+            camera = null;   
+
+        function initWebGL()
+        {
+              setupRenderer();
+              setupScene();
+              setupCamera();
+
+              renderer.render(scene, camera);
+        }
+
+        function setupRenderer()
+        {
+              renderer = new THREE.WebGLRenderer();
+              renderer.setSize( CANVAS_WIDTH, CANVAS_HEIGHT );
+              document.body.appendChild( renderer.domElement );
+        }
+
+        function setupScene()
+        {
+              scene = new THREE.Scene();
+              addMesh();
+
+        }
+        function setupCamera()
+        {
+              camera = new THREE.PerspectiveCamera(75, CANVAS_WIDTH / CANVAS_HEIGHT, 0.1, 10000);
+              camera.position.z = 300;
+        }
+
+        function addMesh()
+        {        	
+            var geometry = new THREE.PlaneGeometry(100,100);
+
+			var material = new THREE.MeshBasicMaterial({ color: 0xFF0000 });
+			var mesh = new THREE.Mesh( geometry, material );
+			scene.add(mesh);
+        }
+	</script>
+</body>
+</html>
