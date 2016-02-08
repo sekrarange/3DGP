@@ -1,0 +1,178 @@
+<!doctype html>
+<html>
+<head>
+    <title>Module 2</title>
+    <style>
+        canvas {
+            background-color: black;
+        }
+    </style>
+    <script id="shader-vs" type="x-shader/x-vertex">
+        attribute float aRotationAngle;
+        uniform float uRadius;
+        
+        varying mediump vec4 vColor;
+        varying mediump float vAngle;
+
+        vec4 transform(float a)
+        {
+            float x = (cos(a) * uRadius);
+            float y = (sin(a) * uRadius);
+            
+            return vec4(x, y, 0.0, 1.0);
+        }
+
+        vec4 color(float a)
+        {
+            float r = (sin(a));
+            float g = (cos(a));
+            return vec4(r + 0.5, g + 0.5, 0.0, 1.0);
+        }
+
+        void main(void) {
+            gl_PointSize = 3.0;
+            gl_Position = transform(aRotationAngle);
+            vAngle = aRotationAngle;
+            vColor = color(aRotationAngle);
+        }
+    </script>
+
+    <script id="shader-fs" type="x-shader/x-fragment">
+        precision mediump float;
+        varying float vAngle;
+        varying vec4 vColor;
+
+        vec4 color(float a)
+        {
+            float r = (sin(a));
+            float g = (cos(a));
+            return vec4(r + 0.5, g + 0.5, 0.0, 1.0);
+        }
+
+        void main(void) {            
+            gl_FragColor = color(vAngle);
+            //gl_FragColor = vColor;
+        }
+    </script>
+    <script>
+        var gl = null,
+            canvas = null,
+            glProgram = null,
+            fragmentShader = null,
+            vertexShader = null;
+
+        // The amount of vertices in circle
+        var vertexCount = 64;
+
+        var rotationAngleAttribute = null,
+            radiusUniform = null,
+            verticeBuffer = null;
+
+        function initWebGL() {
+            canvas = document.getElementById("gl-canvas");
+            try {
+
+                gl = canvas.getContext("webgl") ||
+                canvas.getContext("experimental-webgl");
+            } catch (e) {
+            }
+
+            if (gl) {
+                setupWebGL();
+                initShaders();
+                setupBuffers();
+                //drawScene();
+            } else {
+                alert("Error: Your browser does not appear to" + "support WebGL.");
+            }
+        }
+
+        function setupWebGL() {
+            gl.clearColor(1.0, 1.0, 1.0, 1.0);
+            gl.clear(gl.COLOR_BUFFER_BIT);
+        }
+
+        function initShaders() {
+            //get shader source
+            var fs_source = document.getElementById('shader-fs').innerHTML,
+                vs_source = document.getElementById('shader-vs').innerHTML;
+
+            //compile shaders
+            vertexShader = makeShader(vs_source, gl.VERTEX_SHADER);
+            fragmentShader = makeShader(fs_source, gl.FRAGMENT_SHADER);
+            //create program
+            glProgram = gl.createProgram();
+
+            //attach and link shaders to the program
+            gl.attachShader(glProgram, vertexShader);
+            gl.attachShader(glProgram, fragmentShader);
+            gl.linkProgram(glProgram);
+
+            if (!gl.getProgramParameter(glProgram, gl.LINK_STATUS)) {
+                alert("Unable to initialize the shader program.");
+            }
+            //use program
+            gl.useProgram(glProgram);
+        }
+
+        function makeShader(src, type) {
+            //compile the vertex shader
+            var shader = gl.createShader(type);
+            gl.shaderSource(shader, src);
+            gl.compileShader(shader);
+            if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS)) {
+                alert("Error compiling shader: " + gl.getShaderInfoLog(shader));
+            }
+            return shader;
+        }
+
+        function setupBuffers() {
+            var verticeAngles = [];
+            
+            // angle between adjacent vertices in radians
+            var angleDifference = 2 * Math.PI / vertexCount;
+            for (i = 0; i < vertexCount; i++)
+            {
+                verticeAngles.push(i * angleDifference);
+            }
+            
+            verticeBuffer = gl.createBuffer();
+            gl.bindBuffer(gl.ARRAY_BUFFER, verticeBuffer);
+            gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(verticeAngles), gl.STATIC_DRAW);
+        }
+
+        function drawScene(x) {
+            rotationAngleAttribute = gl.getAttribLocation(glProgram, "aRotationAngle");
+            gl.enableVertexAttribArray(rotationAngleAttribute);
+            gl.bindBuffer(gl.ARRAY_BUFFER, verticeBuffer);
+            gl.vertexAttribPointer(rotationAngleAttribute, 1, gl.FLOAT, false, 0, 0);
+
+            radiusUniform = gl.getUniformLocation(glProgram, "uRadius");
+            gl.uniform1f(radiusUniform, 0.9);
+
+            switch(x)
+            {
+                case 1:
+                    gl.drawArrays(gl.TRIANGLE_FAN, 0, vertexCount);
+                    break;
+                case 2:
+                    gl.drawArrays(gl.LINE_LOOP, 0, vertexCount);
+                    break;
+                case 3:
+                    gl.drawArrays(gl.POINTS, 0, vertexCount);
+                    break;
+            }
+        }
+    </script>
+</head>
+<body onload="initWebGL()">
+    <form action="">
+        <input type="radio" name="drawmode" onclick="drawScene(1);" />Polygon<br />
+        <input type="radio" name="drawmode" onclick="drawScene(2);" />line loop<br />
+        <input type="radio" name="drawmode" onclick="drawScene(3);" />point sprite<br />
+    </form>
+    <canvas id="gl-canvas" width="400" height="400">
+        Your browser does not support the HTML5 canvas element.
+    </canvas>
+</body>
+</html>
